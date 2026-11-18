@@ -1,0 +1,17 @@
+#!/bin/sh
+# Titokszűrő: ha a commitba kulcsnak, tokennek vagy jelszónak tűnő érték kerülne, megáll.
+# Ha a gépen van privát szűrőlista (~/.claude/hooks/publikus_szuro.py), azzal is átnézi a módosított fájlokat.
+# Bekapcsolás: git config core.hooksPath githooks
+pat='(api[_-]?key|secret|token|passw(or)?d)[^A-Za-z0-9]{1,4}[A-Za-z0-9_/+=-]{16,}|sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|BEGIN [A-Z ]*PRIVATE KEY'
+if git diff --cached -U0 --diff-filter=ACM | grep -E '^\+' | grep -Eiq -- "$pat"; then
+  echo "pre-commit: titoknak tűnő érték a commitban. Ellenőrizd: git diff --cached" >&2
+  exit 1
+fi
+szuro="$HOME/.claude/hooks/publikus_szuro.py"
+if [ -f "$szuro" ]; then
+  if ! python -I "$szuro" "$(git rev-parse --show-toplevel)"; then
+    echo "pre-commit: a publikus szűrő érzékeny adatot talált." >&2
+    exit 1
+  fi
+fi
+exit 0

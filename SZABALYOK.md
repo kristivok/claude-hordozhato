@@ -1,0 +1,136 @@
+# Szabálytár – agent-munkaszabályok
+
+Változat: 1 · 2026-11-17 · Forrás: korábbi projektek kérései, döntései és visszajelzései; folyamatosan bővítve.
+
+**Használat:** a kötelező (K) szabályok tömör változata a `CLAUDE.md`-ben van. Ez a fájl a teljes tábla indoklással és ellenőrzéssel. Hivatkozni az azonosítóval lehet (pl. „tartsd be a BIZT-05-öt”).
+- **Szint:** **K** = kötelező, mindig érvényes. **A** = ajánlott, eltérni csak indokkal lehet.
+- **Ellenőrzés:** az, amiből a végén bizonyítható, hogy a szabály teljesült.
+- A projektfüggő részeket (útvonalak, eszköznevek) `<…>` jelöli.
+
+---
+
+## Szabályok
+
+### KOM – Kommunikáció
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| KOM-01 | K | Magyarul, tömören válaszolj („caveman”): ne legyen bevezető, ne ismételd a kérést, ne narráld a folyamatot, és ne írj záró összefoglalót, ha a kimenet már mutatja. Részletesebben csak kérésre („részletesebben”, „normal mode”). | A hosszú, magyarázó válaszok zavarnak. | A válasz csak eredményt, kódot és a valóban fontos figyelmeztetést tartalmaz. |
+| KOM-02 | K | Hosszú munka közben néhány szóban jelezd, épp mit csinálsz. | Látni akarom, hogy halad a munka. | Van rövid állapotjelzés a hosszú szakaszok között. |
+| KOM-03 | K | Őszintén jelents: a bukó teszt bukó, a ki nem próbált dolog „nem ellenőrzött”, az elmaradt lépés „kihagyva”, és mondd meg, miért. | A hamis „kész” később drágább. | A záró üzenet megnevezi, mi nincs kész vagy nincs ellenőrizve. |
+| KOM-04 | K | Csak valódi döntésnél kérdezz (jóváhagyás, ízlés, kockázat). A többit a kódból, a dokumentációból és a józan alapértékekből döntsd el, majd jelezd. | Ne álljon a munka apróság miatt. | Kérdés csak elágazó döntésnél van. |
+| KOM-05 | A | A végén a felhasználónak külön sorold fel: mi változott, mi a teendője (pl. linket újra megnyitni), mi maradt nyitva, és milyen fejlesztési ötletek vannak. | Ebből tudok dönteni. | A záró üzenetben van „teendő” és „nyitva maradt” rész. |
+
+### MUN – Munkamód, agentek
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| MUN-01 | K | Ha a kérés több, egymástól független részből áll, oszd szét párhuzamos agentek között. A koordinátor (fő agent) tervez, integrál, tesztel és élesít. | Gyors, párhuzamos és pontos munka. | A feladatnaplóban látszik az agentenkénti kiosztás. |
+| MUN-02 | K | Minden agent a feladatához illő skilleket kapja a környezetben elérhetőkből (pl. UI, biztonság, tesztelés, hibakeresés, sebészi javítás). A koordinátor a tervező/kiosztó skilleket használja. Új skillt vagy eszközt telepíteni csak engedéllyel szabad. | A skillek pontosabb, egységes munkát adnak. | Az agent-promptban szerepel a skill-fájlok útvonala. |
+| MUN-03 | K | Az agentek fájlköre ne fedje egymást: egy fájlt egyszerre csak egy agent szerkeszt. Ha valakinek idegen fájl kellene, „KÉRÉS →<KÓD>” formában jelzi, és a koordinátor továbbítja. | Elkerülhetők az ütközések és a felülírások. | Kiosztási tábla fájl → agent. |
+| MUN-04 | K | Agent ne futtasson git-et, deployt vagy gráf-frissítést; ezeket csak a koordinátor végzi. A böngészőt egyszerre csak egy agent használja, saját devserver-porttal. | Egy kézben marad a verzió és az élesítés. | Az agent-jelentésben nincs git/deploy. |
+| MUN-05 | K | Kódkérdés előtt nézd meg a kódgráfot (pl. `graphify query "<kérdés>"`, ha telepítve és engedélyezett), és nyers fájlt csak a megtalált sorokra olvass. Ezt minden agent-promptba írd bele. | Token-hatékonyság. | Az agentek a gráfból indulnak. |
+| MUN-06 | K | Légy token- és költségtakarékos: kevés, szűk feladatú agent; egy-két hívásos apróságot csinálj meg helyben; rövid jelentésformátumot írj elő (egy lelet = egy sor). | A párhuzamos agentek gyorsan kimerítik a keretet. | A jelentések rövidek, és nincs felesleges agent. |
+| MUN-07 | A | Nagy átvizsgálást többkörös beszélgetésben végezz az agentekkel: (1) független átvizsgálás → (2) kereszt-ellenőrzés, azaz egymás leleteinek cáfolási kísérlete → (3) javítási terv és fájlkiosztás → (4) javítás → (5) kereszt-review → (6) review-javítás → (7–8) teszter-körök és javítás → (9) második kereszt-review → (10) zárás. | Így szűrhetők ki a téves riasztások és a javítás okozta hibák. | Körönként mentett jelentések (`<KÓD>-r<kör>.md`). |
+| MUN-08 | K | Legyen külön teszter-agent, aki a futó alkalmazást böngészőben és HTTP-vel, minden szerepkörrel végigpróbálja: hibakeresés, támadó próbák (csak helyi vagy írásban jóváhagyott tesztkörnyezeten), regressziós csomag. | A kódolvasás nem talál meg mindent. | Teszter-jelentés PASS/FAIL listával. |
+| MUN-09 | K | Az agent-jelentés egy-egy lelete: `ID · súlyosság · fájl:sor · hiba · kihasználás / forgatókönyv · javaslat · ráfordítás`. Csak ellenőrzött leletet írjon, a bizonytalant jelölje. | Összevethető, priorizálható leletek. | Minden leletnek van fájl:sor hivatkozása. |
+| MUN-10 | A | Az agentek által írt fájlokat integráláskor normalizáld: LF sorvég, BOM nélkül (kivéve, ahol az eszköz BOM-ot igényel, pl. PowerShell 5.1 szkript). | Az agentek gyakran CRLF-et vagy BOM-ot írnak. | CRLF/BOM-ellenőrzés a commit előtt. |
+
+### TERV – Tervezés és dokumentáció
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| TERV-01 | K | A kéréseimet először szedd táblába (`R1…`, kód, állapot), utána készíts megvalósítási tervet, és csak ezután kódolj. A tervezés is legyen optimális (agentekkel, ha kell). | Áttekinthető, mi készül és miért. | `docs/FELADATOK.md` kéréstábla. |
+| TERV-02 | K | Vezess feladatnaplót: `docs/FELADATOK.md` (összesítő, verziónként), és minden alfeladathoz egy haladási jegyzetet (`docs/feladatok/<KÓD>.md`), amit az agent mérföldkövenként frissít. | Ha elfogy a keret, innen folytatható. | A napló naprakész, az alfeladatoknak van jegyzetük. |
+| TERV-03 | K | Legyen egy rögzített szerződés (`CONTRACT.md`: API, jogosultsági mátrix) és állapotlap (`ALLAPOT.md`). Új munkamenet ezek elolvasásával indul. | Egységes alap minden agentnek. | A változások a szerződésben is megjelennek. |
+| TERV-04 | K | A telepítési és üzemeltetési dokumentáció (`TELEPITES.md`) elején legyen egy „Mi a teendő, ha…” gyorslap, és tartalmazzon katasztrófa-helyreállítási fejezetet. | Vészhelyzetben ne kelljen keresgélni. | Van §0 gyorslap és DR-fejezet. |
+| TERV-05 | A | A nagyobb, többlépcsős terveket (pl. tesztkörnyezet, architektúra) előbb tervező agent írja meg, utána egy átvizsgáló agent jelölje meg a gyenge pontokat (`[REVIEW]`), és csak ezután jöhet a megvalósítás. | A rossz terv drágább, mint a rossz kód. | Terv + átvizsgálási jelölések. |
+| TERV-06 | K | A memóriába (projekt-memória) a nem kódból kiolvasható tényeket írd: döntéseket, hozzáféréseket, nyitott teendőket és a dátumokat. | Folytathatóság munkamenetek között. | A memória egy sorban rögzíti a verzió állapotát. |
+
+### VER – Verziókezelés, kiadás
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| VER-01 | K | Minden módosítás után: verzióemelés (SemVer; séma-verzió csak migrációnál), commit, push a projekt remote-jára (a céges szabályzat szerint; ha nem egyértelmű, kérdezz), a kódgráf frissítése, ha van. | Minden állapot visszakereshető. | A verziófájl, a tag és a push látszik. |
+| VER-02 | K | Nagy csomagnál is legyen köztes push, alfeladatonként külön commit, értelmes üzenettel. | Egy hiba könnyebben visszafejthető. | Commit-sor alfeladatonként. |
+| VER-03 | K | GitHubra csak **privát** repó kerülhet (munkahelyen: a céges szabályzat szerinti tárhely). Semmi nem lehet publikus (repó, gist, release, Pages) külön, kifejezett engedély nélkül. | A projektek személyesek. | `gh repo view --json visibility` = PRIVATE. |
+| VER-04 | K | A csak helyben maradó fájlok (személyes kéréslista, teszt-hitelesítők, kulcsok) kerüljenek `.gitignore`-ba, és ezt ellenőrizd is. Ami egyszer feltöltődött, azt a repó újralétrehozásával kell eltávolítani. | Ne szivárogjon ki. | `git check-ignore` találat. |
+| VER-05 | A | Kiadáskor legyen tag (`vX.Y.Z`), és a feladatnaplóba kerüljön egy sor a verzióról (mi, miért, élesítési teendő). | Átlátható kiadástörténet. | Tag + naplósor. |
+
+### TESZT – Tesztelés és ellenőrzés
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| TESZT-01 | K | Minden új viselkedéshez és javításhoz legyen automata teszt (lehetőleg olyan, ami a javítás nélkül elbukna). A végén fusson le a teljes tesztsor, a linterek és a biztonsági lint is. | Regresszió ellen. | Zöld teljes futás, számokkal jelentve. |
+| TESZT-02 | K | Ne nyilváníts semmit késznek ellenőrzés nélkül: UI-változást böngészőben kell megnézni (375 / 768 / 1280 / 1920 px, nagy betűmérettel is), és kell konzolhiba-ellenőrzés. | A teszt nem lát elrendezést. | Képernyő- vagy DOM-mérés, konzol üres. |
+| TESZT-03 | K | A tördelést és a túllógást mérd: legyen vízszintes görgetés-ellenőrzés (`scrollWidth = innerWidth`), ne törjön gomb vagy cím, és ne jelenjen meg „null” szöveg. | Ezek a leggyakoribb UI-hibák. | Tördelés-szkenner eredménye. |
+| TESZT-04 | K | Teszteld minden szerepkörrel és a vendég vagy megosztó link nézetével is (pl. néző nem lát rejtett adatot, nem kap feltöltés-gombot). | A jogosultsági hibák csak így derülnek ki. | Szerepkörönkénti PASS lista. |
+| TESZT-05 | K | Támadó próbák (csak helyi vagy írásban jóváhagyott tesztkörnyezeten): XSS-payload minden szövegmezőben, CSRF token nélkül, IDOR idegen azonosítókkal, tömb- vagy unicode-bemenet, dupla kattintás és dupla beküldés, hibás URL-útvonalak, furcsa importfájl. | Valós visszaélési utak. | A teszter-jelentés kitér rájuk. |
+| TESZT-06 | A | Legyen újrafuttatható regressziós csomag (szkript, a jelszavakat fájlból olvassa, nem égeti be), és fusson le minden javítási kör után. | Gyors újraellenőrzés. | `regr/` szkript + eredményfájl. |
+| TESZT-07 | K | A helyi teszt külön adatmásolaton fusson (külön tároló, saját port), a végén állítsd vissza az ideiglenes engedményeket (pl. kikapcsolt 2FA-kényszer). | Ne sérüljön a valódi helyi adat. | A visszaállítás megtörtént és jelentve van. |
+
+### BIZT – Biztonság
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| BIZT-01 | K | Minden nagyobb csomag végén legyen biztonsági audit. Időnként teljes, többkörös átvizsgálás szakterületi agentekkel (hitelesítés, jogosultság, bemenet, frontend, üzemeltetés) és teszterrel. | Ne maradjanak rések. | Audit-dokumentum leletekkel és állapotukkal. |
+| BIZT-02 | K | Alapból tilts (deny-by-default): minden végpont jogosultságot kér, ismeretlen akció 404, és a jogosultság-ellenőrzés minden olvasó úton fusson (lista, keresés, export, mentés, fájl-kiszolgálás, hibaüzenetek, figyelmeztetések). | A szivárgás gyakran mellékúton jön (pl. hibaüzenet, 409-válasz, kép-URL). | Guard-teszt a végpont-regiszterre. |
+| BIZT-03 | K | Minden belépési pont (API, médiaszolgáltató, letöltés) ugyanazokat a kapukat kapja: karbantartás, eszköz-tiltás, 2FA-kényszer, rate-limit. | Egy elfelejtett kapu elég a kijátszáshoz. | Teszt minden belépési pontra. |
+| BIZT-04 | K | Frontend: szigorú CSP (nincs inline script vagy style), DOM-ot csak biztonságos helperrel vagy `textContent`-tel írj (nincs `innerHTML`), URL-attribútumot csak szűrve. | XSS ellen. | sec-lint tiszta, nincs `innerHTML`. |
+| BIZT-05 | K | A bemenetet tisztítsd: vezérlő-, bidi- és csak láthatatlan karakterek ki; típusellenőrzés (tömb a szöveg helyén 422, ne 500); hossz- és mélységkorlát; paraméterezett SQL. | Adatszennyezés, hamisított megerősítő szöveg, napló-szemetelés ellen. | Bemenet-tisztító tesztek. |
+| BIZT-06 | K | A drága műveletek (képdekódolás, import, mentés) előtt fusson a keret- és jogellenőrzés. Legyen rate-limit, és a naplózás a rate-limit UTÁN jöjjön (névtelen kérés ne tudja elárasztani a naplót). | DoS és naplóforgatás elleni védelem. | Mért időzítés, naplósor-számlálás. |
+| BIZT-07 | K | Érzékeny műveletnél kérj friss azonosítást (reauth); adminnak kötelező a 2FA; jelszócsere vagy kiléptetés érvénytelenítse a függő tokeneket és a félbehagyott belépéseket. | A fiókátvétel ablakainak szűkítése. | Teszt: régi token / régi munkamenet elutasítva. |
+| BIZT-08 | K | A titkos kulcs (pl. offline mentéskulcs) soha ne kerüljön a webes felületre; kulcscsere csak parancssorból (a tárhely birtokában) történjen. | Egy ellopott admin-munkamenet se szerezhesse meg. | A webes út 403-at ad. |
+| BIZT-09 | K | Szerveroldali kimenő kérés (SSRF): csak publikus IP (A és AAAA is), IP-rögzítés, ne kövessen átirányítást, és ha nem oldható fel, tiltson (fail-closed). | Belső hálózat védelme. | SSRF-teszt. |
+| BIZT-10 | K | Fájlfeltöltés: MIME-ellenőrzés és újrakódolás (EXIF/GPS ki), pixel- és memóriaplafon, SVG és poliglott tilos, `nosniff`; privát képnél ne legyen hosszú böngésző-cache. | Rosszindulatú fájl és adatszivárgás ellen. | Feltöltési tesztek. |
+| BIZT-11 | K | Integritás-figyelés: a kihagyási minták legyenek lehorgonyozva, futtatható fájl soha ne maradjon ki. A manifest hash-ét a deploy-napló is rögzítse, hogy egy külső fél (pl. külső figyelő gép) összevethesse. | Webshell felismerése. | Teszt: álcázott futtatható fájl → riasztás. |
+| BIZT-12 | K | A webes rendszer kompromittálása ne érhesse el a belső hálózatot: a belső gép csak kifelé kérdez, aláírt kulccsal, szűk jogkörrel. | Hálózati izoláció. | Nincs befelé nyitott út. |
+| BIZT-13 | A | Az audit-leleteket dokumentáld: súlyosság, állapot (javítva / elfogadva / nyitott), maradék kockázat, és a tulajdonos teendői. | Átlátható kockázatkép. | `BIZTONSAGI-AUDIT.md` fejezet. |
+
+### ADAT – Adatvédelem
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| ADAT-01 | K | A személyes adatok alapból védettek; a láthatóság szintenként minden úton érvényes. Hiba esetén a szigorúbb irányba essen. | Személyes adatok védelme. | Import, cron vagy hiba után sem nyílik ki adat. |
+| ADAT-02 | K | Más felhasználók jogosultsági szintjét csak admin lássa, mindenki más csak az adminisztrátorokat. | Kérés: ne lássák egymás szintjét. | Szerepkör-teszt. |
+| ADAT-03 | K | Külső értesítésbe (chat-bot, külső figyelő, napló) ne kerüljön személynév vagy címke, csak művelet és azonosító. | Harmadik fél szerverein ne legyen személyes adat. | Maszkolás-teszt. |
+| ADAT-04 | K | Megosztó link: lejárat, visszavonhatóság, a személyes adatok maszkolása, és szigorú alapértékek. Legyen „a vendég szemével” előnézet. | Kontrollált megosztás. | Link-teszt vendégként. |
+| ADAT-05 | K | Importnál a forrás adatvédelmi jelölései maradjanak meg; az érzékeny (pl. cím jellegű) mező a szigorúbb védelmet kapja. | Ne vesszen el a privát jelölés. | Import-adatvédelmi teszt. |
+| ADAT-06 | K | Mentés és export titkosítva menjen a jóváhagyott külső tárhelyre; nyílt ideiglenes fájl ne maradjon. | Felhős tárhely szivárgása ellen. | Titkosított fájl, ideiglenes fájl törölve. |
+
+### HITEL – Hitelesítők és kényes műveletek
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| HITEL-01 | K | Az agent soha nem gépel be jelszót, kulcsot vagy tokent. Az FTP vagy deploy hitelesítése titkosított helyi tárolóból jön (pl. Windows DPAPI). Az admin-jelszót és a 2FA-t a felhasználó adja meg; a szolgáltatásfiók-JSON-t az agent nem olvassa el. | A titkok a felhasználónál maradnak. | Nincs titok a promptban, logban vagy repóban. |
+| HITEL-02 | K | Helyi teszt-hitelesítő (fixture) csak a localhost-példányhoz használható, az értékét soha ne írd ki válaszba vagy jelentésbe. | Ne szivárogjon. | Az értékek nem szerepelnek a kimenetben. |
+| HITEL-03 | K | Élesítéshez, publikáláshoz, üzenetküldéshez és végleges törléshez kifejezett jóváhagyás kell. Az egyszeri jóváhagyás csak arra az egy műveletre szól. | Visszafordíthatatlan vagy kifelé ható lépés. | Jóváhagyás a beszélgetésben. |
+| HITEL-04 | K | A meglévő tárhely-struktúrához a projektmappán kívül ne nyúlj; dedikált, a projektmappára korlátozott FTP-fiókot használj. | Más oldalak és beállítások védelme. | A deploy csak a célmappába ír. |
+| HITEL-05 | K | Felhő- vagy szolgáltatásfiók-jogot a legkisebb szükséges szinten adj, és dokumentáld, miért. | Legkisebb jogosultság. | Dokumentált jogkör. |
+
+### UI – Felület és UX
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| UI-01 | K | Legyen teljesen reszponzív: telefonon a fő nézet töltse ki a képernyőt (a vezérlők ne vegyék el a helyet: becsukható panel, alsó lap). | Telefonon is kényelmes legyen. | 375 px-es mérés. |
+| UI-02 | K | Kártyás oldalakon dinamikus, rés nélküli elrendezés (masonry) legyen, egységes kártyaszélességgel; a kártyák a nagyítással és az ablakmérettel együtt rendeződjenek. A ritkán használt kártya kerüljön a végére. | Esztétikus, kitöltött felület. | Mérés 375–1920 px között. |
+| UI-03 | K | Kompakt, egysoros listasorok legyenek, kis sorközzel, és a kép a szöveggel egy sorban. | Sűrű, áttekinthető adatlap. | Böngészős ellenőrzés. |
+| UI-04 | K | Minden elem, amihez több információ tartozik, legyen kattintható, és felugró ablakban mutassa a részleteket. Az ablak igazodjon a tartalomhoz (nincs nagy rés), a fotó nagyban a szöveg mellett jelenjen meg, telefonon fölötte. A kereszthivatkozott elemek is kattinthatók legyenek. | Gyors, kontextusban maradó részletek. | Böngészős ellenőrzés. |
+| UI-05 | K | Pörgő kör helyett vázas (skeleton) betöltés legyen; a kiegészítő magyarázat ⓘ-tippben jelenjen meg, ne foglaljon helyet. | Nyugodtabb, tisztább felület. | Nincs spinner a nézetekben. |
+| UI-06 | K | A célközönség nyelvén, egyszerű szöveg legyen (pl. magyar, tegező; 18 px-es alapbetű három fokozattal, világos és sötét téma); a menüpontok ne ismétlődjenek (kreatív, egyedi nevek). | A célközönség is könnyen használja. | Szöveg-átnézés. |
+| UI-07 | K | Akadálymentesség (WCAG 2.2 AA cél): billentyűzettel bejárható, látható fókusz, modálban fókuszcsapda; veszélyes megerősítésnél a Mégse kapjon fókuszt; legyen akadálymentes név és élő régió az értesítésekhez; mozgáscsökkentés tisztelete. | Mindenki használhassa. | a11y-tesztek, képernyőolvasós szerkezet. |
+| UI-08 | K | Hibabiztos interakció: dupla kattintás ne küldjön kétszer; mentés közben az ablak ne záródjon be; a hosszú művelet megszakítható legyen; a hibaüzenet érthető legyen (ne „Hiba történt.”); deploy után jelezze: „Új verzió – Frissítés”. | Adatvesztés és zavar ellen. | Dupla kattintásos teszt. |
+| UI-09 | A | A felület csak azt kínálja, amit a szerepkör meg is tehet (ne kelljen kitölteni egy űrlapot ahhoz, hogy 403 jöjjön). | Frusztráció ellen. | Szerepkörönkénti gomb-ellenőrzés. |
+| UI-10 | A | Ízlésbeli UI-kéréseknél kis lépésekben haladj, és minden kör után böngészőben ellenőrizd (képernyőkép vagy mérés). A visszajelzést pontosan kövesd (pl. „vond összébb”, „ne legyen szélesebb a többinél”). | A vizuális kéréseket pontosan kell eltalálni. | Előtte/utána mérés. |
+
+### ÜZEM – Üzemeltetés, élesítés
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| ÜZEM-01 | K | Élesítés előtt legyen tesztkörnyezet (súrolt adatmásolat, hozzáférés-lista). Élesítés után azonnal fusson automatikus utóellenőrzés (ping, védett utak 403, cache-fejlécek), és legyen kész visszaállítási lépés. | Kockázatos változás (pl. szerverkonfig) biztonságos élesítése. | Élesítés utáni ellenőrzés zöld. |
+| ÜZEM-02 | K | A deploy legyen inkrementális, fájlonként ellenőrzött, karbantartási jelzővel, és legyen tiltólistája (kulcs- és titokfájl → STOP). Legyen hálózat nélküli önteszt is. | Ne kerüljön titok a szerverre. | Hálózat nélküli önteszt 0 hibával. |
+| ÜZEM-03 | K | Gyorsítótár: verziózott (tartalom-hash) asset-URL-ek, hosszú `immutable` cache, a verzió nélküliek `no-cache`. Ellenőrizd a CDN beállítását (query a cache-kulcsban, a meglévő fejlécek tisztelete). | Gyors betöltés elavult kód nélkül. | Fejléc-ellenőrzés élesben. |
+| ÜZEM-04 | K | A mentés legyen automatikus (napi, plusz minden N. módosítás után), titkosított (offline kulcs a tulajdonosnál), külső tárhelyre is menjen, ellenőrzött (csonka mentés nem „sikeres”), és legyen kipróbált visszaállítási útja (próba-visszaállítás negyedévente). | Adatvesztés ellen. | Visszaállítási próba eredménye. |
+| ÜZEM-05 | K | Monitorozás és riasztás: leállt mentés, leállt cron, külső tárhely hibája (tartósan, nem csak 24 óráig), kulcsváltás, 2FA-zár, integritás-eltérés → értesítés (pl. chat-bot). | A csendes leállás a legveszélyesebb. | Riasztási tesztek. |
+| ÜZEM-06 | K | Naplózás: a naplók a külső tárhelyre menjenek (ne a webszerveren gyűljenek); legyen méret- és áradásplafon; ne kerüljön bele titok; a hibához tartozzon visszakereshető hivatkozás-azonosító. | Nyomon követhetőség, adatvédelem. | Napló-tesztek. |
+| ÜZEM-07 | A | Legyenek vészhelyzeti parancssoros kapuk (zárolás feloldása, 2FA-reset, mentéskulcs-reset), auditálva, és csak a tárhely birtokában elérhetők. | Kizáródás ellen, biztonságosan. | Dokumentált CLI-kapcsolók. |
+| ÜZEM-08 | A | A külső szolgáltatások beállítási csapdáit dokumentáld (pl. Google OAuth „Testing” módban 7 nap után lejár a token, ezért „In production” kell). | A leggyakoribb csendes hibák. | `TELEPITES.md` szakasz. |
+
+### TAN – Tanulságok, hibanapló
+| ID | Szint | Utasítás | Miért | Ellenőrzés |
+|---|---|---|---|---|
+| TAN-01 | K | Ha hibáztál, tévedtél, vagy a felhasználó kijavított, és a helyzet visszatérhet, azonnal vegyél fel egy sort a tanulságnaplóba (ID, dátum, terület, jel = hibaüzenet-részlet, mi történt → mit csinálj, szabály). Előbb keresd meg, van-e már hasonló sor; ha van, azt pontosítsd. Egyszeri elírást nem kell rögzíteni. A forrásgépen ez a saját (privát) napló; más gépen a helyi `~/.claude/rules/TANULSAGOK-HELYI.md`. | Ugyanaz a hiba ne forduljon elő kétszer, se ebben, se másik projektben. | Új vagy pontosított sor a naplóban. |
+| TAN-02 | K | A subagent nem ír a tanulságnaplóba. A jelentése végén `TANULSÁG: <jel> → <teendő>` sorban adja le, és a koordinátor rögzíti. | Párhuzamos írás nélkül, egy kézben marad a napló. | A jelentésekben lévő TANULSÁG-sorok bekerültek a naplóba. |
+| TAN-03 | K | A forrásgépen rögzítés után commit + push a privát beállításrepóban. Más gépen a hordozható repó csak olvasható: az általános, nem érzékeny tanulságot a válasz végén jelezd („Átvihető a hordozható repóba: …”). Céges kód, rendszer-, eszköz-, út- és hosztnév, belső hibaüzenet és bármilyen céges adat soha nem lehet benne; hogy átkerül-e, mindig a felhasználó dönti el. | Visszakereshető, és nem keveredik a céges és a személyes környezet. | A commit látszik / a jelzés megtörtént. |
+| TAN-04 | K | A tanulságok minden munkamenetbe betöltődnek. 40 aktív sor fölött a régieket általánosítsd szabállyá (ebbe a táblába és a `CLAUDE.md`-be), és archiváld őket. | A betöltött napló kicsi és gyors maradjon. | Legfeljebb 40 aktív sor. |
+| TAN-05 | K | Hordozható szinkron (a forrásgépen): ha új kérés, szabály, munkamód-tudnivaló vagy tanulság születik, ami nyilvánosságra kerülve sem gond (nincs benne név, e-mail, domain, felhasználónevet tartalmazó útvonal, IP, belső hálózati részlet, projekt-, üzleti vagy pénzügyi adat, harmadik fél adata, hitelesítő), akkor a tisztított változata kerüljön be a publikus hordozható repóba is: szűrő-szkennelés, commit, és push a felhasználó jóváhagyásával (HITEL-03). Kétes esetben kimarad, vagy kérdezz. | Más, nem saját környezetben futó Claude is friss tapasztalattal dolgozzon. | A hordozható repó commitja + tiszta szkennelés. |

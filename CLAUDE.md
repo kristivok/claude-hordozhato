@@ -31,6 +31,8 @@ Ezt a fájlt a gép globális `~/.claude/CLAUDE.md`-je importálja (`@~/claude-h
 - KOM-02 Hosszú munkánál pár szavas állapotjelzés.
 - KOM-03 Őszinte jelentés: a bukó teszt bukó, a ki nem próbált „nem ellenőrzött”, a kihagyott lépés okkal.
 - KOM-04 Csak valódi döntésnél kérdezz (jóváhagyás, ízlés, kockázat); a többit döntsd el és jelezd.
+- KOM-06 Kérés értelmezése: hibajelzésnél csak a hibás esetet javítsd; az „ilyen/ez” a projektre is mutathat; a lekérdezésemre szánt termék adat + CLI, nem felület; kétértelműnél egy kérdés, teljes opció-kombinációkkal és költséggel.
+- KOM-07 Tényt ellenőrzött forrásból: a saját nézetem lehet torz (sandbox, virtualizált registry) → felhasználóval vagy naplóból ellenőriztess; olvashatatlan hiteles forrás → tükör, jelölve; számadat két forrásból; agent-állítás szúrópróbával.
 
 ## MUN – munkamód
 - MUN-01 Független részekből álló kérés → párhuzamos agentek; a koordinátor tervez, integrál, tesztel, élesít.
@@ -41,10 +43,11 @@ Ezt a fájlt a gép globális `~/.claude/CLAUDE.md`-je importálja (`@~/claude-h
 - MUN-06 Token-takarékosság: kevés, szűk feladatú agent; apróság helyben; rövid jelentésformátum.
 - MUN-08 Nagyobb munkánál legyen külön teszter-agent: a futó alkalmazást böngészőben és HTTP-vel, minden szerepkörrel próbálja végig (csak helyi vagy írásban jóváhagyott tesztkörnyezeten).
 - MUN-09 Egy lelet egy sor: ID · súlyosság · fájl:sor · hiba · forgatókönyv · javaslat · ráfordítás. Csak ellenőrzött lelet.
+- MUN-11 Agent-eligazításban: futtatási parancs (.venv, mi hiányzik, helyettesítő), a valódi felhasználói adatmappa tilalma, saját scratchpad-almappa, egyetlen böngészőhasználó, a tömeges átírás által érintett forrás-regexes tesztek.
 
 ## TERV – terv, dokumentáció
 - TERV-01 A kérések táblába kerülnek (R1…) → terv → csak utána kód.
-- TERV-02 Feladatnapló (`docs/FELADATOK.md`) és alfeladatonként haladási jegyzet (`docs/feladatok/<KÓD>.md`), hogy a keret elfogyásakor folytatható legyen.
+- TERV-02 Feladatnapló (`docs/FELADATOK.md`) és alfeladatonként haladási jegyzet (`docs/feladatok/<KÓD>.md`), hogy a keret elfogyásakor folytatható legyen; a keret visszaállása után a meglévő agentet folytasd (SendMessage).
 - TERV-03 Rögzített szerződés (API, jogosultsági mátrix) és állapotlap; új munkamenet ezekkel indul.
 - TERV-04 Az üzemeltetési doksi elején legyen „Mi a teendő, ha…” gyorslap és katasztrófa-helyreállítási rész.
 - TERV-06 Memóriába a kódból ki nem olvasható tények kerülnek (döntés, hozzáférés, nyitott teendő, dátum).
@@ -52,7 +55,7 @@ Ezt a fájlt a gép globális `~/.claude/CLAUDE.md`-je importálja (`@~/claude-h
 ## VER – verzió, kiadás
 - VER-01 Minden módosítás után: verzióemelés, commit, push a projekt remote-jára (a céges szabályzat szerint; ha nem egyértelmű, kérdezz), kódgráf-frissítés, ha van.
 - VER-02 Nagy csomagnál köztes push, alfeladatonként külön commit.
-- VER-03 Kód és projekt csak privát (vagy a céges szabályzat szerinti) tárhelyre kerül; semmi nem publikus kifejezett engedély nélkül.
+- VER-03 Kód és projekt csak privát (vagy a céges szabályzat szerinti) tárhelyre kerül; semmi nem publikus kifejezett engedély nélkül. Publikussá tételnél tiszta, egycommitos előzmény (régi SHA → 404), noreply szerző.
 - VER-04 A csak helyi fájlok (személyes listák, teszt-hitelesítők, kulcsok) `.gitignore`-ban vannak, ellenőrizve.
 
 ## TESZT – ellenőrzés
@@ -61,7 +64,8 @@ Ezt a fájlt a gép globális `~/.claude/CLAUDE.md`-je importálja (`@~/claude-h
 - TESZT-03 Mérd a tördelést: nincs vízszintes túllógás, törő gomb vagy cím, „null” szöveg.
 - TESZT-04 Minden szerepkörrel és vendég / megosztó nézettel is tesztelj.
 - TESZT-05 Támadó próbák (csak helyi vagy írásban jóváhagyott tesztkörnyezeten): XSS, CSRF, IDOR, tömb- és unicode-bemenet, dupla kattintás és beküldés, hibás útvonal, furcsa importfájl.
-- TESZT-07 Helyi teszt külön adatmásolaton fusson; az ideiglenes engedményeket a végén állítsd vissza.
+- TESZT-07 Helyi teszt külön adatmásolaton fusson; az ideiglenes engedményeket a végén állítsd vissza. A valódi felhasználói adatmappához teszt nem nyúl, ad hoc futtatásnál sem.
+- TESZT-08 Megbízható teszt: rögzített „most”; 0 gyűjtött eset = hiba (pytest: `teszt_` nem gyűlik); utólag írt tesztnél mutációs próba; összevetés előtt normalizálás.
 
 ## BIZT – biztonság
 - BIZT-01 Nagyobb csomag végén biztonsági audit; időnként többkörös, szakterületi agentekkel és teszterrel.
@@ -88,9 +92,10 @@ Ezt a fájlt a gép globális `~/.claude/CLAUDE.md`-je importálja (`@~/claude-h
 ## HITEL – hitelesítők, kényes műveletek
 - HITEL-01 Jelszót, kulcsot, tokent soha nem gépelsz be. A deploy-hitelesítés titkosított helyi tárolóból jön (pl. DPAPI); admin-jelszót és 2FA-t a felhasználó adja meg; szolgáltatásfiók-JSON-t nem olvasol.
 - HITEL-02 Helyi teszt-hitelesítő csak localhosthoz használható, az értékét soha nem írod ki.
-- HITEL-03 Élesítés, publikálás, üzenetküldés, végleges törlés csak kifejezett jóváhagyással; egy jóváhagyás egy műveletre szól.
+- HITEL-03 Élesítés, publikálás, üzenetküldés, végleges törlés csak kifejezett jóváhagyással; egy jóváhagyás egy műveletre szól. Megszakító művelet (újraindítás, leállítás, firmware) csak a műveletre ÉS időpontra szóló külön jóváhagyással; előtte: van-e valaki a gépnél, mi várható.
 - HITEL-04 A meglévő tárhely-struktúrához a projektmappán kívül nem nyúlsz; projektre korlátozott fiókot használsz.
 - HITEL-05 Felhő- és szolgáltatásfiók-jog a legkisebb szükséges szinten, dokumentálva.
+- HITEL-06 Engedélyező tiltását vagy fájlzárat nem kerülsz meg: kérdezz, csak jóváhagyással futtass; zárnál a fájlt nem érintő út, vagy a felhasználó indítsa újra a folyamatot.
 
 ## UI – felület
 - UI-01 Teljesen reszponzív; telefonon a fő nézet kitölti a képernyőt.
@@ -98,7 +103,7 @@ Ezt a fájlt a gép globális `~/.claude/CLAUDE.md`-je importálja (`@~/claude-h
 - UI-03 Kompakt, egysoros listasorok; a kép a szöveggel egy sorban.
 - UI-04 A részletes elem kattintható → tartalomhoz igazodó felugró ablak; a kereszthivatkozások is kattinthatók.
 - UI-05 Spinner helyett váz-betöltés (skeleton); a kiegészítő magyarázat ⓘ-tippben.
-- UI-06 A célközönség nyelvén, egyszerűen (pl. magyar, tegező, 18 px alapbetű, világos/sötét téma); nincs ismétlődő menünév.
+- UI-06 A célközönség nyelvén, egyszerűen (pl. magyar, tegező, 18 px alapbetű, világos/sötét téma); nincs ismétlődő menünév. Nyelvspecifikus funkcióhoz anyanyelvi alap (hang, modell).
 - UI-07 Akadálymentesség (WCAG 2.2 AA cél): billentyűzet, fókusz, veszélyes megerősítésnél a Mégse van fókuszban, élő régió.
 - UI-08 Dupla beküldés tiltva; mentés közben az ablak nem záródik be; a hosszú művelet megszakítható; érthető hibaüzenet; „Új verzió – Frissítés” jelzés.
 

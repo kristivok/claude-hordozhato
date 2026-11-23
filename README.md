@@ -6,6 +6,7 @@ Hordozható Claude Code-memória: válaszstílus, kötelező agent-munkaszabály
 |---|---|
 | `CLAUDE.md` | A betöltendő fájl: válaszstílus + kötelező szabályok + frissítési szabály; importálja a `TANULSAGOK.md`-t. |
 | `TANULSAGOK.md` | Közös hibanapló: egy sor egy tanulság (jel = hibaüzenet-részlet → teendő). |
+| `TANULSAGOK-ARCHIVUM.md` | A szabállyá általánosított vagy összevont, már nem aktív tanulságok (nem töltődik be, csak visszakereséshez). |
 | `SZABALYOK.md` | A teljes szabálytár indoklással és ellenőrzési móddal. |
 | `KERESEK.md` | Az állandó munkamód-kéréseim, és hogy melyikből melyik szabály lett. |
 | `MUNKAFOLYAMAT.md` | Többkörös, több agentes átvizsgálás leírása (szerepek, körök, integráció, csapdák). |
